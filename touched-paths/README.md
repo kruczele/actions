@@ -8,8 +8,9 @@ For non-pull-request events (e.g. `push`, `workflow_dispatch`, `schedule`), the 
 
 - **Fast Non-PR Fast-Tracking**: Fast-tracks to `true` for all groups on non-PR runs.
 - **Dynamic Outputs**: Generates dynamic step outputs corresponding directly to each defined group key.
-- **Flexible YAML formats**: Supports group arrays, named objects, or standard group mappings.
-- **Full Glob Support**: Supports `**`, `*`, file extensions, dotfiles, and negation powered by `picomatch`.
+- **Zero Dependencies**: Pure Node 24 implementation with zero npm packages and no build steps.
+- **Flexible YAML & JSON formats**: Supports group arrays, named objects, or standard group mappings.
+- **Full Glob Support**: Supports `**`, `*`, `?`, brace expansion (`{a,b}`), dotfiles, and negation (`!`).
 - **Renamed File Detection**: Tracks both the new file path and previous file path if a file was moved.
 
 ## Inputs
@@ -46,7 +47,7 @@ jobs:
     steps:
       - name: Check touched paths
         id: changes
-        uses: ./touched-paths # or <owner>/<repo>/touched-paths@v1
+        uses: kruczele/actions/touched-paths@<commit-sha>
         with:
           paths: |
             - backend:
@@ -107,3 +108,7 @@ paths: |
   frontend:
     - 'web/**'
 ```
+
+---
+
+[← Back to Central Actions Readme](../README.md)

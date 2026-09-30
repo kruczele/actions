@@ -15,15 +15,13 @@ All actions in this repository are designed to be as simple, fast, and dependenc
 
 ## Available Actions
 
-### [`touched-paths`](./touched-paths/)
+| Action | Description | Documentation |
+|---|---|---|
+| [`touched-paths`](./touched-paths/) | Checks if a Pull Request touched files matching configured glob groups, outputting dynamic booleans for each group. Fast-tracks non-PR runs to `true`. | [Documentation →](./touched-paths/README.md) |
 
-Detects if a Pull Request touched files matching configured glob groups, outputting dynamic booleans (`true` / `false`) for each group.
+---
 
-- **Non-PR Events**: Automatically fast-tracks all groups to `true` (with zero API calls) so workflows run completely on branches/pushes.
-- **Pull Request Events**: Queries the GitHub API to match changed file paths against configured glob groups.
-- **Zero Dependencies**: Pure Node 24 with native glob matching and YAML parsing.
-
-#### Example
+## Quick Example: `touched-paths`
 
 ```yaml
 jobs:
@@ -53,3 +51,5 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm run test:backend
 ```
+
+For detailed configuration options and syntax formats, see the [touched-paths README](./touched-paths/README.md).
