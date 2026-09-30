@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -9,6 +10,7 @@ describe('touched-paths runner flow', () => {
   let outputFile;
   let eventFile;
   const originalEnv = { ...process.env };
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'action-test-'));
@@ -26,22 +28,32 @@ describe('touched-paths runner flow', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    process.exitCode = 0;
+    globalThis.fetch = originalFetch;
     fs.rmSync(tmpDir, { recursive: true, force: true });
-    vi.restoreAllMocks();
   });
 
   it('does nothing and skips immediately on non-pull-request events', async () => {
     fs.writeFileSync(eventFile, JSON.stringify({ push: { ref: 'refs/heads/main' } }));
     process.env.GITHUB_EVENT_NAME = 'push';
 
-    const infoSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    let logged = '';
+    const origWrite = process.stdout.write;
+    process.stdout.write = (chunk) => {
+      logged += chunk;
+      return true;
+    };
 
-    await run();
+    try {
+      await run();
+    } finally {
+      process.stdout.write = origWrite;
+    }
 
     const outputContent = fs.readFileSync(outputFile, 'utf8');
-    expect(outputContent).toBe('');
-    expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining('Not a pull request event. Skipping.'));
-    expect(process.exitCode).toBe(0);
+    assert.equal(outputContent, '');
+    assert.match(logged, /Not a pull request event\. Skipping\./);
+    assert.equal(process.exitCode, 0);
   });
 
   it('processes PR touched files and sets dynamic outputs', async () => {
@@ -61,7 +73,7 @@ describe('touched-paths runner flow', () => {
     - 'migrations/**'
 `;
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = async () => ({
       ok: true,
       json: async () => [
         { filename: 'services/auth/index.ts' },
@@ -73,10 +85,10 @@ describe('touched-paths runner flow', () => {
     await run();
 
     const outputContent = fs.readFileSync(outputFile, 'utf8');
-    expect(outputContent).toContain('backend=true\n');
-    expect(outputContent).toContain('frontend=true\n');
-    expect(outputContent).toContain('database=false\n');
-    expect(process.exitCode).toBe(0);
+    assert.ok(outputContent.includes('backend=true\n'));
+    assert.ok(outputContent.includes('frontend=true\n'));
+    assert.ok(outputContent.includes('database=false\n'));
+    assert.equal(process.exitCode, 0);
   });
 
   it('fails if token is missing on PR events', async () => {
@@ -93,13 +105,21 @@ describe('touched-paths runner flow', () => {
     delete process.env.GITHUB_TOKEN;
     delete process.env.INPUT_TOKEN;
 
-    const errorSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    let errLogged = '';
+    const origErrWrite = process.stderr.write;
+    process.stderr.write = (chunk) => {
+      errLogged += chunk;
+      return true;
+    };
 
-    await run();
+    try {
+      await run();
+    } finally {
+      process.stderr.write = origErrWrite;
+    }
 
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('GitHub token is required')
-    );
+    assert.equal(process.exitCode, 1);
+    assert.match(errLogged, /GitHub token is required/);
+    process.exitCode = 0;
   });
 });

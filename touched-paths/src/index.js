@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { getInput, setOutput, info, setFailed, getContext } from './core.js';
 import { parseGroups } from './parser.js';
 import { getPrTouchedFiles } from './files.js';
@@ -45,6 +46,7 @@ export async function run() {
   }
 }
 
-if (process.env.NODE_ENV !== 'test') {
+// Direct execution check
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   run();
 }

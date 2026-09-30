@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { parseGroups } from '../src/parser';
-import { checkTouchedGroups } from '../src/matcher';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { parseGroups } from '../src/parser.js';
+import { checkTouchedGroups, globToRegExp } from '../src/matcher.js';
 
 describe('parseGroups', () => {
   it('parses array of group objects (key -> paths)', () => {
@@ -13,7 +14,7 @@ describe('parseGroups', () => {
     - 'package.json'
 `;
     const result = parseGroups(yaml);
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       backend: ['src/backend/**/*.ts', 'prisma/**'],
       frontend: ['src/frontend/**', 'package.json']
     });
@@ -29,7 +30,7 @@ describe('parseGroups', () => {
     - 'web/**'
 `;
     const result = parseGroups(yaml);
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       api: ['api/**'],
       web: ['web/**']
     });
@@ -43,41 +44,56 @@ docs:
   - '*.md'
 `;
     const result = parseGroups(yaml);
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       backend: ['server/**'],
       docs: ['*.md']
     });
   });
 
+  it('parses json format directly', () => {
+    const json = JSON.stringify([
+      { backend: ['src/api/**/*.ts'] },
+      { docs: ['README.md'] }
+    ]);
+    const result = parseGroups(json);
+    assert.deepEqual(result, {
+      backend: ['src/api/**/*.ts'],
+      docs: ['README.md']
+    });
+  });
+
   it('throws on invalid or empty input', () => {
-    expect(() => parseGroups('')).toThrow();
-    expect(() => parseGroups('[]')).toThrow();
-    expect(() => parseGroups('some: {}')).toThrow();
+    assert.throws(() => parseGroups(''));
+    assert.throws(() => parseGroups('[]'));
+    assert.throws(() => parseGroups('some: {}'));
   });
 });
 
-describe('checkTouchedGroups', () => {
+describe('checkTouchedGroups & glob matching', () => {
   it('correctly identifies touched groups via glob patterns', () => {
     const groups = {
       backend: ['src/backend/**/*.ts', 'prisma/**'],
       frontend: ['src/frontend/**', 'public/**'],
       docs: ['*.md', 'docs/**'],
-      infra: ['terraform/**', '.github/workflows/*.yml']
+      infra: ['terraform/**', '.github/workflows/*.yml'],
+      nested: ['packages/{app,core}/**/*.js']
     };
 
     const touchedFiles = [
       'src/backend/users/service.ts',
       'README.md',
-      '.github/workflows/ci.yml'
+      '.github/workflows/ci.yml',
+      'packages/app/dist/bundle.js'
     ];
 
     const result = checkTouchedGroups(groups, touchedFiles);
 
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       backend: true,
       frontend: false,
       docs: true,
-      infra: true
+      infra: true,
+      nested: true
     });
   });
 
@@ -91,7 +107,7 @@ describe('checkTouchedGroups', () => {
 
     const result = checkTouchedGroups(groups, touchedFiles);
 
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       config: true,
       github: true
     });
@@ -106,7 +122,7 @@ describe('checkTouchedGroups', () => {
     const touchedFiles = ['src/backend/index.js'];
     const result = checkTouchedGroups(groups, touchedFiles);
 
-    expect(result).toEqual({
+    assert.deepEqual(result, {
       empty: false,
       other: false
     });
