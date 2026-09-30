@@ -33,9 +33,15 @@ describe('touched-paths runner flow', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('does nothing and skips immediately on non-pull-request events', async () => {
+  it('fast-tracks all groups to true on non-pull-request events', async () => {
     fs.writeFileSync(eventFile, JSON.stringify({ push: { ref: 'refs/heads/main' } }));
     process.env.GITHUB_EVENT_NAME = 'push';
+    process.env.INPUT_PATHS = `
+- backend:
+    - 'src/backend/**'
+- frontend:
+    - 'src/frontend/**'
+`;
 
     let logged = '';
     const origWrite = process.stdout.write;
@@ -51,8 +57,9 @@ describe('touched-paths runner flow', () => {
     }
 
     const outputContent = fs.readFileSync(outputFile, 'utf8');
-    assert.equal(outputContent, '');
-    assert.match(logged, /Not a pull request event\. Skipping\./);
+    assert.ok(outputContent.includes('backend=true\n'));
+    assert.ok(outputContent.includes('frontend=true\n'));
+    assert.match(logged, /Not a pull request event\. Fast-tracking all groups to true\./);
     assert.equal(process.exitCode, 0);
   });
 

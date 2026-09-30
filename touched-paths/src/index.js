@@ -6,25 +6,29 @@ import { checkTouchedGroups } from './matcher.js';
 
 export async function run() {
   try {
+    const pathsInput = getInput('paths', { required: true });
+    const groups = parseGroups(pathsInput);
+    const groupNames = Object.keys(groups);
+    info(`Configured groups: ${groupNames.join(', ')}`);
+
     const context = getContext();
     const pr = context.payload && context.payload.pull_request;
 
-    // For non pull-request events, do nothing quickly
+    // For non pull-request events, fast track all groups to 'true' without API calls
     if (!pr) {
-      info('Not a pull request event. Skipping.');
+      info('Not a pull request event. Fast-tracking all groups to true.');
+      for (const group of groupNames) {
+        setOutput(group, 'true');
+        info(`Output '${group}': true`);
+      }
       return;
     }
 
-    const pathsInput = getInput('paths', { required: true });
     const token = getInput('token') || process.env.GITHUB_TOKEN;
 
     if (!token) {
       throw new Error('GitHub token is required to fetch changed files for the pull request.');
     }
-
-    const groups = parseGroups(pathsInput);
-    const groupNames = Object.keys(groups);
-    info(`Configured groups: ${groupNames.join(', ')}`);
 
     const touchedFiles = await getPrTouchedFiles(
       token,

@@ -2,11 +2,11 @@
 
 A GitHub Action that detects if a Pull Request touched files matching configured glob groups, outputting dynamic booleans (`true` / `false`) for each group.
 
-For non-pull-request events (e.g. `push`, `workflow_dispatch`, `schedule`), the action skips immediately with minimal overhead.
+For non-pull-request events (e.g. `push`, `workflow_dispatch`, `schedule`), the action fast-tracks immediately and outputs `true` for all configured groups with minimal overhead and zero API calls.
 
 ## Features
 
-- **Fast Execution**: Quickly exits on non-PR events.
+- **Fast Non-PR Fast-Tracking**: Fast-tracks to `true` for all groups on non-PR runs.
 - **Dynamic Outputs**: Generates dynamic step outputs corresponding directly to each defined group key.
 - **Flexible YAML formats**: Supports group arrays, named objects, or standard group mappings.
 - **Full Glob Support**: Supports `**`, `*`, file extensions, dotfiles, and negation powered by `picomatch`.
