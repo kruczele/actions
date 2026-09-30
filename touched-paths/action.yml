@@ -1,0 +1,14 @@
+name: 'Touched Paths'
+description: 'Checks if a pull request touched files matching specified glob groups and sets dynamic boolean outputs'
+author: 'krukon'
+inputs:
+  paths:
+    description: 'YAML array or mapping of groups and their glob path patterns'
+    required: true
+  token:
+    description: 'GitHub token for GitHub API calls'
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: 'node24'
+  main: 'src/index.js'

@@ -1,0 +1,19 @@
+{
+  "name": "touched-paths",
+  "version": "1.0.0",
+  "description": "GitHub Action to detect if a pull request modified files matching specified glob groups",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "actions",
+    "github-actions",
+    "paths",
+    "diff",
+    "pull-request"
+  ],
+  "author": "",
+  "license": "MIT"
+}
